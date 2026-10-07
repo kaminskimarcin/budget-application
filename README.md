@@ -1,4 +1,4 @@
-# 💰 Budget Application
+# Budget Application
 
 Budget Application to webowa aplikacja do zarządzania budżetem osobistym. Użytkownik rejestruje przychody i wydatki, przypisuje je do kategorii oraz ustala miesięczne limity budżetowe, a aplikacja prezentuje podsumowania i informuje o przekroczeniu limitów. Aplikacja będzie wdrożona w GCP w izolowanej architekturze trójwarstwowej (Web / API / Database).
 
@@ -6,7 +6,7 @@ Budget Application to webowa aplikacja do zarządzania budżetem osobistym. Uży
 
 ---
 
-## 👥 Zespół
+## Zespół
 
 | Rola | Imię i nazwisko | Nr studenta |
 |---|---|---|
@@ -14,7 +14,7 @@ Budget Application to webowa aplikacja do zarządzania budżetem osobistym. Uży
 
 ---
 
-## 🛠 Stos technologiczny
+## Stos technologiczny
 
 | Warstwa | Technologia |
 |---|---|
@@ -27,7 +27,7 @@ Budget Application to webowa aplikacja do zarządzania budżetem osobistym. Uży
 
 ---
 
-## 🏗 Architektura
+## Architektura
 
 Aplikacja jest zbudowana w izolowanej architekturze trójwarstwowej (3-tier). Każda warstwa działa w osobnej podsieci VPC.
 
@@ -37,17 +37,17 @@ Aplikacja jest zbudowana w izolowanej architekturze trójwarstwowej (3-tier). Ka
 | API (Spring Boot) | Private Subnet A | Brak publicznego IP, ruch przychodzący tylko z podsieci Web |
 | Baza danych (PostgreSQL) | Private Subnet B | Ścisła izolacja, połączenia tylko z serwera aplikacji |
 
-Schemat architektury znajduje się w folderze [`docs/`](docs/).
+<img width="3200" height="2000" alt="architektura-3tier" src="https://github.com/user-attachments/assets/c6fa5763-94cd-478a-ae88-77da579ec5ed" />
 
 ---
 
-## 📁 Struktura repozytorium
+## Struktura repozytorium
 
 ```
 budget-application/
 ├── backend/    # API – Java 21, Spring Boot
 ├── config/     # Konfiguracja środowisk (szablony zmiennych środowiskowych)
-├── docs/       # Dokumentacja, schematy architektury, raporty z bloków
+├── docs/       # Dokumentacja, schematy architektury
 ├── frontend/   # Interfejs użytkownika – React (Vite)
 └── README.md
 ```
@@ -56,21 +56,14 @@ budget-application/
 |---|---|
 | `backend/` | Kod serwera aplikacji (warstwa logiki, Private Subnet A) |
 | `frontend/` | Kod interfejsu użytkownika (warstwa prezentacji, Public Subnet) |
-| `config/` | Szablony konfiguracji, np. `.env.example`, bez prawdziwych haseł i kluczy |
+| `config/` | Szablony konfiguracji |
 | `docs/` | Dokumentacja projektu i diagramy |
 
 ---
 
 ## ⚙ Konfiguracja
 
-- Adresy usług (URL API, adres bazy danych, bucket Cloud Storage) **nie są wpisane na sztywno w kodzie**. Aplikacja odczytuje je ze zmiennych środowiskowych.
+- Adresy usług (URL API, adres bazy danych, bucket Cloud Storage). Aplikacja odczytuje je ze zmiennych środowiskowych.
 - Szablony zmiennych środowiskowych znajdują się w folderze `config/`.
-- Pliki z prawdziwymi wartościami (`.env`) nie trafiają do repozytorium.
 
 ---
-
-## 🔀 Praca z repozytorium
-
-- Praca na gałęziach `feature/<nazwa>`, bez bezpośrednich commitów do `main`.
-- Każda zmiana trafia do `main` przez Pull Request podpięty pod Issue z tablicy projektu.
-- Małe, czytelne commity z opisem zmiany.
