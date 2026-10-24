@@ -1,0 +1,12 @@
+[
+  { "id": 1, "date": "2026-10-01", "description": "Wynagrodzenie", "category": "Przychód", "amount": 6500.00, "type": "INCOME" },
+  { "id": 2, "date": "2026-10-02", "description": "Czynsz za mieszkanie", "category": "Mieszkanie", "amount": -2200.00, "type": "EXPENSE" },
+  { "id": 3, "date": "2026-10-03", "description": "Zakupy spożywcze – Biedronka", "category": "Jedzenie", "amount": -184.20, "type": "EXPENSE" },
+  { "id": 4, "date": "2026-10-05", "description": "Bilet miesięczny MPK", "category": "Transport", "amount": -110.00, "type": "EXPENSE" },
+  { "id": 5, "date": "2026-10-07", "description": "Rachunek za prąd", "category": "Rachunki", "amount": -165.40, "type": "EXPENSE" },
+  { "id": 6, "date": "2026-10-10", "description": "Zlecenie – projekt strony", "category": "Przychód", "amount": 1200.00, "type": "INCOME" },
+  { "id": 7, "date": "2026-10-12", "description": "Kino", "category": "Rozrywka", "amount": -58.00, "type": "EXPENSE" },
+  { "id": 8, "date": "2026-10-15", "description": "Zakupy spożywcze – Lidl", "category": "Jedzenie", "amount": -236.75, "type": "EXPENSE" },
+  { "id": 9, "date": "2026-10-18", "description": "Internet i telefon", "category": "Rachunki", "amount": -89.99, "type": "EXPENSE" },
+  { "id": 10, "date": "2026-10-20", "description": "Wpłata na oszczędności", "category": "Oszczędności", "amount": -800.00, "type": "EXPENSE" }
+]
