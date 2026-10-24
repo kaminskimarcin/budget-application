@@ -18,7 +18,7 @@ Budget Application to webowa aplikacja do zarządzania budżetem osobistym. Uży
 
 | Warstwa | Technologia |
 |---|---|
-| Frontend | React (Vite) |
+| Frontend | React (Vite), Bootstrap 5 |
 | Backend | Java 21, Spring Boot (Spring Web, Spring Data JPA, Spring Security, Bean Validation) |
 | Baza danych | PostgreSQL (Cloud SQL) |
 | Chmura | Google Cloud Platform (VPC, Compute Engine, Cloud SQL, Cloud Storage, Cloud NAT) |

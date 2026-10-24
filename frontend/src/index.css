@@ -1,0 +1,4 @@
+/* Wygląd zapewnia Bootstrap 5; tutaj tylko drobne nadpisania projektu. */
+body {
+  background-color: #f3f4f6;
+}
