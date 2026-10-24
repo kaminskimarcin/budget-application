@@ -2,7 +2,6 @@ import mockTransactions from '../mocks/transactions.json';
 import mockBudgets from '../mocks/budgets.json';
 import mockGoals from '../mocks/goals.json';
 
-// Adres API i tryb pracy pochodzą wyłącznie ze zmiennych środowiskowych (.env.local / build args).
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
 

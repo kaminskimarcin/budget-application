@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Wdrożenie frontendu na VM w podsieci publicznej budget-public-web (uruchamiać w Cloud Shell z katalogu frontend/).
 set -euo pipefail
 
 PROJECT_ID="${PROJECT_ID:-budget-companions}"

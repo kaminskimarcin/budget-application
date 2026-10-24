@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 
-// Wspólna obsługa ładowania danych dla wszystkich widoków.
 export function useApiData(loader) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);

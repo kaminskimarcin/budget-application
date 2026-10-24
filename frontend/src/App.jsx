@@ -3,7 +3,6 @@ import BudgetsPage from './pages/BudgetsPage';
 import GoalsPage from './pages/GoalsPage';
 import TransactionsPage from './pages/TransactionsPage';
 
-// Prosty routing oparty na hashu (#/budzety), bez dodatkowych zależności.
 const pages = [
   { path: '#/transakcje', label: 'Transakcje', component: TransactionsPage },
   { path: '#/budzety', label: 'Budżety', component: BudgetsPage },
