@@ -1,4 +1,4 @@
-# 💰 Budget Application
+# Budget Application
 
 Budget Application to webowa aplikacja do zarządzania budżetem osobistym. Użytkownik rejestruje przychody i wydatki, przypisuje je do kategorii, ustala miesięczne limity budżetowe i cele oszczędnościowe, a aplikacja prezentuje podsumowania i informuje o przekroczeniu limitów. Aplikacja jest wdrożona w GCP w izolowanej architekturze trójwarstwowej (Web / API / Database).
 
@@ -6,7 +6,7 @@ Budget Application to webowa aplikacja do zarządzania budżetem osobistym. Uży
 
 ---
 
-## 👥 Zespół
+## Zespół
 
 | Rola | Imię i nazwisko | Nr studenta |
 |---|---|---|
@@ -14,7 +14,7 @@ Budget Application to webowa aplikacja do zarządzania budżetem osobistym. Uży
 
 ---
 
-## 🛠 Stos technologiczny
+## Stos technologiczny
 
 | Warstwa | Technologia |
 |---|---|
@@ -28,7 +28,7 @@ Budget Application to webowa aplikacja do zarządzania budżetem osobistym. Uży
 
 ---
 
-## 🏗 Architektura
+## Architektura
 
 Aplikacja działa w izolowanej architekturze trójwarstwowej (3-tier). Każda warstwa jest w osobnej podsieci VPC `budget-vpc` (region `europe-central2`).
 
@@ -272,7 +272,7 @@ bash deploy/deploy-gcp.sh
 
 ---
 
-## 📁 Struktura repozytorium
+## Struktura repozytorium
 
 ```
 budget-application/
