@@ -1,8 +1,8 @@
 import { currency } from '../utils/format';
 
-function TransactionList({ transactions }) {
+function TransactionList({ transactions, onEdit, onDelete }) {
   if (transactions.length === 0) {
-    return <div className="alert alert-secondary">Brak transakcji.</div>;
+    return <div className="alert alert-secondary">Brak transakcji. Dodaj pierwszą przyciskiem „Dodaj transakcję”.</div>;
   }
 
   return (
@@ -15,18 +15,27 @@ function TransactionList({ transactions }) {
               <th>Opis</th>
               <th>Kategoria</th>
               <th className="text-end">Kwota</th>
+              <th className="text-end">Akcje</th>
             </tr>
           </thead>
           <tbody>
-            {transactions.map((transaction) => (
+            {[...transactions].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id).map((transaction) => (
               <tr key={transaction.id}>
-                <td>{transaction.date}</td>
+                <td className="text-nowrap">{transaction.date}</td>
                 <td>{transaction.description}</td>
                 <td>
                   <span className="badge text-bg-light border">{transaction.category}</span>
                 </td>
                 <td className={`text-end text-nowrap ${transaction.amount < 0 ? 'text-danger' : 'text-success'}`}>
                   {currency.format(transaction.amount)}
+                </td>
+                <td className="text-end text-nowrap">
+                  <button type="button" className="btn btn-sm btn-outline-primary me-1" onClick={() => onEdit(transaction)}>
+                    Edytuj
+                  </button>
+                  <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => onDelete(transaction)}>
+                    Usuń
+                  </button>
                 </td>
               </tr>
             ))}

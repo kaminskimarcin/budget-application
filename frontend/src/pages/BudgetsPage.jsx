@@ -1,9 +1,19 @@
 import { useCallback } from 'react';
-import { getBudgets, getTransactions } from '../api/transactionsApi';
+import { budgetsApi, transactionsApi } from '../api/client';
+import ConfirmDialog from '../components/ConfirmDialog';
+import FormCard from '../components/FormCard';
+import BudgetForm from '../components/forms/BudgetForm';
 import PageHeader from '../components/PageHeader';
 import PageState from '../components/PageState';
 import { useApiData } from '../hooks/useApiData';
+import { useCrudPage } from '../hooks/useCrudPage';
 import { currency, percent } from '../utils/format';
+
+const labels = {
+  created: 'Budżet został dodany.',
+  updated: 'Limit budżetu został zaktualizowany.',
+  deleted: 'Budżet został usunięty.',
+};
 
 function progressColor(usage) {
   if (usage > 100) return 'bg-danger';
@@ -12,11 +22,9 @@ function progressColor(usage) {
 }
 
 function BudgetsPage() {
-  const loadData = useCallback(
-    () => Promise.all([getBudgets(), getTransactions()]),
-    [],
-  );
-  const { data, loading, error } = useApiData(loadData);
+  const loadData = useCallback(() => Promise.all([budgetsApi.list(), transactionsApi.list()]), []);
+  const { data, loading, error, reload } = useApiData(loadData);
+  const crud = useCrudPage(budgetsApi, reload, labels);
 
   const budgets = data
     ? data[0].map((budget) => {
@@ -28,12 +36,33 @@ function BudgetsPage() {
     : [];
   const totalLimit = budgets.reduce((sum, b) => sum + b.limit, 0);
   const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
+  const otherCategories = budgets.filter((b) => b.id !== crud.form?.item?.id).map((b) => b.category);
 
   return (
     <section>
-      <PageHeader title="Budżety – październik 2026" />
-      <PageState loading={loading} error={error} />
-      {data && (
+      <PageHeader title="Budżety" refreshing={loading && data}>
+        {!crud.form && (
+          <button type="button" className="btn btn-primary" onClick={crud.openCreate} disabled={!data}>
+            Dodaj budżet
+          </button>
+        )}
+      </PageHeader>
+
+      {crud.form && (
+        <FormCard title={crud.form.item ? `Edycja budżetu: ${crud.form.item.category}` : 'Nowy budżet'}>
+          <BudgetForm
+            key={crud.form.item?.id ?? 'new'}
+            budget={crud.form.item}
+            existingCategories={otherCategories}
+            onSubmit={crud.save}
+            onCancel={crud.closeForm}
+          />
+        </FormCard>
+      )}
+
+      <PageState loading={loading} error={error} hasData={Boolean(data)} onRetry={reload} />
+      {data && budgets.length === 0 && <div className="alert alert-secondary">Brak budżetów.</div>}
+      {data && budgets.length > 0 && (
         <>
           <div className="card shadow-sm mb-4">
             <div className="card-body">
@@ -83,11 +112,28 @@ function BudgetsPage() {
                       </strong>
                     </div>
                   </div>
+                  <div className="card-footer bg-transparent d-flex justify-content-end gap-1">
+                    <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => crud.openEdit(budget)}>
+                      Edytuj
+                    </button>
+                    <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => crud.askDelete(budget)}>
+                      Usuń
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </>
+      )}
+
+      {crud.toDelete && (
+        <ConfirmDialog
+          title="Usunąć budżet?"
+          message={`Budżet dla kategorii „${crud.toDelete.category}” zostanie usunięty. Transakcje z tej kategorii pozostaną.`}
+          onConfirm={crud.confirmDelete}
+          onCancel={crud.cancelDelete}
+        />
       )}
     </section>
   );
