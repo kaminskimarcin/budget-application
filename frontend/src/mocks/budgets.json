@@ -1,8 +1,0 @@
-[
-  { "id": 1, "category": "Jedzenie", "limit": 900.00 },
-  { "id": 2, "category": "Mieszkanie", "limit": 2200.00 },
-  { "id": 3, "category": "Transport", "limit": 150.00 },
-  { "id": 4, "category": "Rachunki", "limit": 300.00 },
-  { "id": 5, "category": "Rozrywka", "limit": 200.00 },
-  { "id": 6, "category": "Oszczędności", "limit": 800.00 }
-]

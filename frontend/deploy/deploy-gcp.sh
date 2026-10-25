@@ -6,6 +6,7 @@ ZONE="${ZONE:-europe-central2-a}"
 VM_NAME="${VM_NAME:-budget-web-1}"
 MACHINE_TYPE="${MACHINE_TYPE:-e2-micro}"
 SUBNET="${SUBNET:-budget-public-web}"
+API_UPSTREAM="${API_UPSTREAM:-http://10.0.2.10:8080}"
 
 gcloud config set project "$PROJECT_ID"
 
@@ -26,16 +27,17 @@ tar --exclude=node_modules --exclude=dist --exclude='.env' --exclude='.env.local
 
 gcloud compute scp /tmp/frontend.tgz "$VM_NAME":~/frontend.tgz --zone="$ZONE" --tunnel-through-iap
 
-gcloud compute ssh "$VM_NAME" --zone="$ZONE" --tunnel-through-iap -- '
+gcloud compute ssh "$VM_NAME" --zone="$ZONE" --tunnel-through-iap -- "
   set -e
   until command -v docker >/dev/null; do sleep 10; done
   rm -rf ~/frontend && mkdir ~/frontend && tar -xzf ~/frontend.tgz -C ~/frontend
   cd ~/frontend
   sudo docker build -t budget-frontend .
   sudo docker rm -f web 2>/dev/null || true
-  sudo docker run -d --name web --restart unless-stopped -p 80:80 budget-frontend
+  sudo docker run -d --name web --restart unless-stopped -p 80:80 -e API_UPSTREAM='$API_UPSTREAM' budget-frontend
   sudo docker ps
-'
+  curl -s http://localhost/api/budgets
+"
 
 gcloud compute instances describe "$VM_NAME" --zone="$ZONE" \
   --format='table(name, networkInterfaces[0].subnetwork.basename(), networkInterfaces[0].networkIP, networkInterfaces[0].accessConfigs[0].natIP, tags.items)'
