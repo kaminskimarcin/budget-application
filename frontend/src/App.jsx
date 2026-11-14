@@ -40,7 +40,7 @@ function App() {
               </li>
             ))}
           </ul>
-          <span className="navbar-text d-none d-md-inline">Budget Companions · wersja {appVersion}</span>
+          <span className="navbar-text d-none d-md-inline">Budget Companions · auto-deploy · wersja {appVersion}</span>
         </div>
       </nav>
       <main className="container pb-5">
