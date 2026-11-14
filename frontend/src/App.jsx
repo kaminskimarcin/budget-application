@@ -9,6 +9,8 @@ const pages = [
   { path: '#/cele', label: 'Cele', component: GoalsPage },
 ];
 
+const appVersion = (import.meta.env.VITE_APP_VERSION || 'local').slice(0, 7);
+
 function currentPath() {
   return pages.some((page) => page.path === window.location.hash) ? window.location.hash : pages[0].path;
 }
@@ -38,7 +40,7 @@ function App() {
               </li>
             ))}
           </ul>
-          <span className="navbar-text d-none d-md-inline">Budget Companions · domowy budżet</span>
+          <span className="navbar-text d-none d-md-inline">Budget Companions · wersja {appVersion}</span>
         </div>
       </nav>
       <main className="container pb-5">
