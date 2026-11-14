@@ -1,4 +1,4 @@
-name: CI
+name: CI & Security Scan
 
 on:
   push:
@@ -6,9 +6,47 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  frontend:
+  secret-scan:
+    name: Secret scan (Gitleaks)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  vulnerability-scan:
+    name: Vulnerability scan (Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy filesystem scan
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src aquasec/trivy:0.65.0 fs \
+            --scanners vuln \
+            --severity HIGH,CRITICAL \
+            --ignore-unfixed \
+            --exit-code 1 \
+            --format table \
+            .
+
+  frontend:
+    name: Build frontend
+    runs-on: ubuntu-latest
+    needs: [secret-scan, vulnerability-scan]
     defaults:
       run:
         working-directory: frontend
@@ -25,7 +63,9 @@ jobs:
       - run: npm run build
 
   backend:
+    name: Build backend
     runs-on: ubuntu-latest
+    needs: [secret-scan, vulnerability-scan]
     defaults:
       run:
         working-directory: backend
