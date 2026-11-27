@@ -1,3 +1,238 @@
+:root {
+  --app-bg: #f4f6fb;
+  --app-card-border: rgba(15, 23, 42, 0.06);
+  --app-card-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.05);
+  --app-nav-from: #1e3a8a;
+  --app-nav-to: #2563eb;
+  --viz-income: #2a78d6;
+  --viz-expense: #eb6834;
+  --viz-1: #2a78d6;
+  --viz-2: #eb6834;
+  --viz-3: #1baf7a;
+  --viz-4: #eda100;
+  --viz-5: #e87ba4;
+  --viz-6: #008300;
+  --viz-other: #9a9a94;
+  --viz-grid: rgba(15, 23, 42, 0.08);
+}
+
+[data-bs-theme='dark'] {
+  --app-bg: #0f1117;
+  --app-card-border: rgba(255, 255, 255, 0.06);
+  --app-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --app-nav-from: #111827;
+  --app-nav-to: #1e3a8a;
+  --viz-income: #3987e5;
+  --viz-expense: #d95926;
+  --viz-1: #3987e5;
+  --viz-2: #d95926;
+  --viz-3: #199e70;
+  --viz-4: #c98500;
+  --viz-5: #d55181;
+  --viz-6: #0ca30c;
+  --viz-other: #6f6f69;
+  --viz-grid: rgba(255, 255, 255, 0.08);
+  --bs-body-bg: #171a22;
+}
+
 body {
-  background-color: #f3f4f6;
+  background-color: var(--app-bg);
+  min-height: 100vh;
+}
+
+.app-navbar {
+  background: linear-gradient(90deg, var(--app-nav-from), var(--app-nav-to));
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.18);
+}
+
+.app-navbar .nav-link {
+  border-radius: 0.5rem;
+  padding-inline: 0.75rem;
+}
+
+.app-navbar .nav-link.active {
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
+.card {
+  border: 1px solid var(--app-card-border);
+  border-radius: 0.9rem;
+  box-shadow: var(--app-card-shadow);
+}
+
+.card-footer {
+  border-top-color: var(--app-card-border);
+}
+
+.accent-card {
+  border-top: 3px solid var(--accent-color, var(--bs-primary));
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.accent-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+}
+
+.accent-success {
+  --accent-color: var(--bs-success);
+}
+
+.accent-warning {
+  --accent-color: var(--bs-warning);
+}
+
+.accent-danger {
+  --accent-color: var(--bs-danger);
+}
+
+.accent-primary {
+  --accent-color: var(--bs-primary);
+}
+
+.stat-label {
+  letter-spacing: 0.04em;
+  font-size: 0.72rem;
+}
+
+.stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.6rem;
+  font-weight: 700;
+}
+
+.progress-soft {
+  background-color: var(--bs-secondary-bg);
+  border-radius: 999px;
+}
+
+.progress-soft .progress-bar {
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.tx-table thead th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bs-secondary-color);
+  background-color: var(--bs-tertiary-bg);
+  border-bottom-width: 1px;
+}
+
+.tx-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  font-weight: 700;
+}
+
+.tx-income {
+  color: var(--bs-success-text-emphasis);
+  background-color: var(--bs-success-bg-subtle);
+}
+
+.tx-expense {
+  color: var(--bs-danger-text-emphasis);
+  background-color: var(--bs-danger-bg-subtle);
+}
+
+.category-badge {
+  color: var(--bs-emphasis-color);
+  background-color: var(--bs-secondary-bg);
+  font-weight: 500;
+}
+
+.min-w-0 {
+  min-width: 0;
+}
+
+.empty-state {
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.chart-svg {
+  overflow: visible;
+}
+
+.chart-grid {
+  stroke: var(--viz-grid);
+  stroke-width: 1;
+}
+
+.chart-axis {
+  fill: var(--bs-secondary-color);
+  font-size: 11px;
+}
+
+.chart-hit {
+  fill: transparent;
+}
+
+.chart-dimmed {
+  opacity: 0.35;
+}
+
+.chart-svg g,
+.donut circle {
+  transition: opacity 0.15s ease, stroke-width 0.15s ease;
+}
+
+.chart-readout {
+  min-height: 1.25rem;
+}
+
+.legend-swatch {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 3px;
+}
+
+.legend-row {
+  border-radius: 0.4rem;
+  padding-inline: 0.4rem;
+  cursor: default;
+}
+
+.legend-row.is-active {
+  background-color: var(--bs-tertiary-bg);
+}
+
+.amount-col {
+  min-width: 5.5rem;
+}
+
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  pointer-events: none;
+}
+
+@media (max-width: 575.98px) {
+  .stat-card .fs-4 {
+    font-size: 1.15rem !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accent-card,
+  .progress-soft .progress-bar,
+  .chart-svg g,
+  .donut circle {
+    transition: none;
+  }
 }

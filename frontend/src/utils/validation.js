@@ -1,12 +1,10 @@
+import { today } from '../domain/dates';
+
 const AMOUNT_PATTERN = /^\d{1,10}([.,]\d{1,2})?$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export function parseAmount(value) {
   return Number(String(value).trim().replace(',', '.'));
-}
-
-export function today() {
-  return new Date().toLocaleDateString('sv-SE');
 }
 
 function isValidDate(value) {

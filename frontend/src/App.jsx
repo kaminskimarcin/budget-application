@@ -1,51 +1,35 @@
-import { useEffect, useState } from 'react';
+import AppNavbar from './components/AppNavbar';
+import { useHashRoute } from './hooks/useHashRoute';
+import { useTheme } from './hooks/useTheme';
 import BudgetsPage from './pages/BudgetsPage';
+import DashboardPage from './pages/DashboardPage';
 import GoalsPage from './pages/GoalsPage';
 import TransactionsPage from './pages/TransactionsPage';
 
-const pages = [
-  { path: '#/transakcje', label: 'Transakcje', component: TransactionsPage },
-  { path: '#/budzety', label: 'Budżety', component: BudgetsPage },
-  { path: '#/cele', label: 'Cele', component: GoalsPage },
+const routes = [
+  { path: '#/pulpit', label: 'Pulpit', icon: '📊', component: DashboardPage },
+  { path: '#/transakcje', label: 'Transakcje', icon: '💳', component: TransactionsPage },
+  { path: '#/budzety', label: 'Budżety', icon: '🎯', component: BudgetsPage },
+  { path: '#/cele', label: 'Cele', icon: '🏆', component: GoalsPage },
 ];
 
 const appVersion = (import.meta.env.VITE_APP_VERSION || 'local').slice(0, 7);
-
-function currentPath() {
-  return pages.some((page) => page.path === window.location.hash) ? window.location.hash : pages[0].path;
-}
+const currentYear = new Date().getFullYear();
 
 function App() {
-  const [path, setPath] = useState(currentPath);
-
-  useEffect(() => {
-    const onHashChange = () => setPath(currentPath());
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
-  }, []);
-
-  const ActivePage = pages.find((page) => page.path === path).component;
+  const route = useHashRoute(routes);
+  const { theme, toggleTheme } = useTheme();
+  const ActivePage = route.component;
 
   return (
     <>
-      <nav className="navbar navbar-expand navbar-dark bg-primary mb-4">
-        <div className="container">
-          <span className="navbar-brand fw-semibold">Budget Application</span>
-          <ul className="navbar-nav me-auto">
-            {pages.map((page) => (
-              <li className="nav-item" key={page.path}>
-                <a className={`nav-link ${page.path === path ? 'active' : ''}`} href={page.path}>
-                  {page.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-          <span className="navbar-text d-none d-md-inline">Budget Companions · auto-deploy · wersja {appVersion}</span>
-        </div>
-      </nav>
+      <AppNavbar routes={routes} activePath={route.path} theme={theme} onToggleTheme={toggleTheme} version={appVersion} />
       <main className="container pb-5">
-        <ActivePage />
+        <ActivePage key={route.path} />
       </main>
+      <footer className="container pb-4 small text-body-secondary text-center">
+        Budget Companions · {currentYear}
+      </footer>
     </>
   );
 }
