@@ -1,15 +1,54 @@
-import { currency } from '../utils/format';
+import { currency, formatDate } from '../utils/format';
 
-function TransactionList({ transactions, onEdit, onDelete }) {
-  if (transactions.length === 0) {
-    return <div className="alert alert-secondary">Brak transakcji. Dodaj pierwszą przyciskiem „Dodaj transakcję”.</div>;
-  }
+function TransactionRow({ transaction, onEdit, onDelete }) {
+  const income = transaction.amount > 0;
 
   return (
-    <div className="card shadow-sm">
+    <tr>
+      <td className="text-nowrap text-body-secondary small">{formatDate(transaction.date)}</td>
+      <td>
+        <div className="d-flex align-items-center gap-2">
+          <span className={`tx-icon ${income ? 'tx-income' : 'tx-expense'}`} aria-hidden="true">
+            {income ? '↗' : '↘'}
+          </span>
+          <span className="fw-medium">{transaction.description}</span>
+        </div>
+      </td>
+      <td>
+        <span className="badge rounded-pill category-badge">{transaction.category}</span>
+      </td>
+      <td className={`text-end text-nowrap fw-semibold ${income ? 'text-success' : 'text-danger'}`}>
+        {income ? '+' : ''}
+        {currency.format(transaction.amount)}
+      </td>
+      <td className="text-end text-nowrap">
+        <button
+          type="button"
+          className="btn btn-sm btn-link text-decoration-none text-primary"
+          aria-label={`Edytuj: ${transaction.description}`}
+          onClick={() => onEdit(transaction)}
+        >
+          Edytuj
+        </button>
+        <button
+          type="button"
+          className="btn btn-sm btn-link text-decoration-none text-danger"
+          aria-label={`Usuń: ${transaction.description}`}
+          onClick={() => onDelete(transaction)}
+        >
+          Usuń
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+function TransactionList({ transactions, onEdit, onDelete }) {
+  return (
+    <div className="card overflow-hidden">
       <div className="table-responsive">
-        <table className="table table-striped table-hover align-middle mb-0">
-          <thead className="table-primary">
+        <table className="table table-hover align-middle mb-0 tx-table">
+          <thead>
             <tr>
               <th>Data</th>
               <th>Opis</th>
@@ -19,55 +58,12 @@ function TransactionList({ transactions, onEdit, onDelete }) {
             </tr>
           </thead>
           <tbody>
-            {[...transactions].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id).map((transaction) => (
-              <tr key={transaction.id}>
-                <td className="text-nowrap">{transaction.date}</td>
-                <td>{transaction.description}</td>
-                <td>
-                  <span className="badge text-bg-light border">{transaction.category}</span>
-                </td>
-                <td className={`text-end text-nowrap ${transaction.amount < 0 ? 'text-danger' : 'text-success'}`}>
-                  {currency.format(transaction.amount)}
-                </td>
-                <td className="text-end text-nowrap">
-                  <button type="button" className="btn btn-sm btn-outline-primary me-1" onClick={() => onEdit(transaction)}>
-                    Edytuj
-                  </button>
-                  <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => onDelete(transaction)}>
-                    Usuń
-                  </button>
-                </td>
-              </tr>
+            {transactions.map((transaction) => (
+              <TransactionRow key={transaction.id} transaction={transaction} onEdit={onEdit} onDelete={onDelete} />
             ))}
           </tbody>
         </table>
       </div>
-    </div>
-  );
-}
-
-export function TransactionSummary({ transactions }) {
-  const income = transactions.filter((t) => t.amount > 0).reduce((sum, t) => sum + t.amount, 0);
-  const expenses = transactions.filter((t) => t.amount < 0).reduce((sum, t) => sum + t.amount, 0);
-
-  const cards = [
-    { label: 'Przychody', value: income, className: 'text-success' },
-    { label: 'Wydatki', value: expenses, className: 'text-danger' },
-    { label: 'Saldo', value: income + expenses, className: '' },
-  ];
-
-  return (
-    <div className="row g-3 mb-4">
-      {cards.map((card) => (
-        <div className="col-12 col-md-4" key={card.label}>
-          <div className="card shadow-sm h-100">
-            <div className="card-body">
-              <div className="text-body-secondary small">{card.label}</div>
-              <div className={`fs-4 fw-semibold ${card.className}`}>{currency.format(card.value)}</div>
-            </div>
-          </div>
-        </div>
-      ))}
     </div>
   );
 }

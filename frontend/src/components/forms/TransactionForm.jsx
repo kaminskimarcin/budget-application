@@ -1,5 +1,6 @@
 import { useForm } from '../../hooks/useForm';
-import { parseAmount, today, validateTransaction } from '../../utils/validation';
+import { today } from '../../domain/dates';
+import { parseAmount, validateTransaction } from '../../utils/validation';
 import FormActions from './FormActions';
 import FormField from './FormField';
 
