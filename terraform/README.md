@@ -1,4 +1,4 @@
-# Terraform – sieć Budget Application (Blok 03)
+# Terraform – sieć Budget Application (Bloki 03 i 09)
 
 Infrastruktura sieciowa 3-tier w GCP (region `europe-central2`):
 
@@ -8,7 +8,7 @@ Infrastruktura sieciowa 3-tier w GCP (region `europe-central2`):
 | Podsieć publiczna (Web) | `budget-public-web` | 10.0.1.0/24 |
 | Podsieć prywatna A (API) | `budget-private-api` | 10.0.2.0/24, Private Google Access |
 | Podsieć prywatna B (DB) | `budget-private-db` | 10.0.3.0/24, Private Google Access |
-| Firewall | `budget-vpc-allow-web-http-https` | 80/443 z 0.0.0.0/0 → tag `web` |
+| Firewall | `budget-vpc-allow-web-http-https` | 80/443 tylko z zakresów Load Balancera Google 130.211.0.0/22 i 35.191.0.0/16 → tag `web` (Blok 09) |
 | Firewall | `budget-vpc-allow-api-from-web` | 8080 tylko z 10.0.1.0/24 → tag `api` |
 | Firewall | `budget-vpc-allow-db-from-api` | 5432 tylko z 10.0.2.0/24 → tag `db` |
 | Firewall | `budget-vpc-allow-ssh-iap` | 22 tylko z zakresu IAP 35.235.240.0/20 |

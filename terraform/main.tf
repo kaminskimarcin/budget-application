@@ -27,7 +27,7 @@ resource "google_compute_firewall" "allow_web_http_https" {
   network       = google_compute_network.vpc.id
   direction     = "INGRESS"
   priority      = 1000
-  source_ranges = ["0.0.0.0/0"]
+  source_ranges = var.lb_source_ranges
   target_tags   = ["web"]
 
   allow {
