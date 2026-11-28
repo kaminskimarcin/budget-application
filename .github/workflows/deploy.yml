@@ -165,7 +165,7 @@ jobs:
       - name: HTTP to HTTPS redirect
         run: |
           curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' "http://$APP_DOMAIN/" | tee redirect.txt
-          grep -Eq "^30[18] https://$APP_DOMAIN/" redirect.txt
+          grep -Eq "^301 https://$APP_DOMAIN(:443)?/" redirect.txt
 
       - name: Cloud Run not reachable directly
         run: |
