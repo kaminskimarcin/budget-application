@@ -45,3 +45,9 @@ variable "db_port" {
   type        = number
   default     = 5432
 }
+
+variable "lb_source_ranges" {
+  description = "Zakresy Google Front End (HTTPS Load Balancer i health checki), jedyne źródło ruchu HTTP/HTTPS do warstwy Web"
+  type        = list(string)
+  default     = ["130.211.0.0/22", "35.191.0.0/16"]
+}

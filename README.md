@@ -18,10 +18,10 @@ Budget Application to webowa aplikacja do zarządzania budżetem osobistym. Uży
 
 | Warstwa | Technologia |
 |---|---|
-| Frontend | React 19 (Vite), Bootstrap 5, Nginx (serwowanie plików i reverse proxy `/api`) |
+| Frontend | React 19 (Vite), Bootstrap 5; w chmurze pliki statyczne w Cloud Storage za HTTPS Load Balancerem |
 | Backend | Java 21, Spring Boot 4 (Spring Web MVC, Spring Data JPA, Bean Validation, Actuator), Flyway |
 | Baza danych | PostgreSQL 16 (kontener Docker na VM w podsieci prywatnej) |
-| Chmura | Google Cloud Platform (VPC, Compute Engine, Cloud NAT, Secret Manager, Cloud Storage – stan Terraform) |
+| Chmura | Google Cloud Platform (VPC, Cloud Load Balancing + Google-managed SSL, Cloud Run, Cloud Storage, Compute Engine, Cloud NAT, Artifact Registry, Secret Manager) |
 | IaC | Terraform |
 | CI/CD | GitHub Actions |
 | Kontrola wersji | Git + GitHub |
@@ -30,26 +30,25 @@ Budget Application to webowa aplikacja do zarządzania budżetem osobistym. Uży
 
 ## Architektura
 
-Aplikacja działa w izolowanej architekturze trójwarstwowej (3-tier). Każda warstwa jest w osobnej podsieci VPC `budget-vpc` (region `europe-central2`).
+Aplikacja działa w izolowanej architekturze trójwarstwowej (3-tier) w VPC `budget-vpc` (region `europe-central2`). Jedynym publicznym wejściem jest globalny HTTPS Load Balancer z certyfikatem SSL zarządzanym przez Google.
 
-| Warstwa | Podsieć | VM | Dostępność |
+| Warstwa | Usługa GCP | Sieć | Dostępność |
 |---|---|---|---|
-| Web (Nginx + React) | `budget-public-web` 10.0.1.0/24 | `budget-web-1` | publicznie z Internetu (HTTP 80) |
-| API (Spring Boot) | `budget-private-api` 10.0.2.0/24 | `budget-api-1` (10.0.2.10) | brak publicznego IP, port 8080 tylko z podsieci Web |
-| Baza danych (PostgreSQL) | `budget-private-db` 10.0.3.0/24 | `budget-db-1` (10.0.3.10) | brak publicznego IP, port 5432 tylko z podsieci API |
+| Web (React) | HTTPS Load Balancer `budget-https-map` + bucket `budget-companions-web` | publiczny adres IP `budget-lb-ip` | HTTPS 443 z Internetu, HTTP 80 tylko przekierowuje na HTTPS |
+| API (Spring Boot) | Cloud Run `budget-api` | Direct VPC egress z podsieci `budget-private-api` 10.0.2.0/24, tag `api` | ingress `internal-and-cloud-load-balancing`: tylko przez Load Balancer (`/api/*`) |
+| Baza danych (PostgreSQL) | VM `budget-db-1` (10.0.3.10) | podsieć `budget-private-db` 10.0.3.0/24, tag `db` | brak publicznego IP, port 5432 tylko z podsieci API |
 
 ### Przepływ danych (end-to-end)
 
 ```mermaid
 flowchart LR
     U([Użytkownik<br/>przeglądarka])
+    LB["HTTPS Load Balancer<br/>budget-lb-ip :443<br/>(:80 → 301 na HTTPS)"]
+    B[("Cloud Storage<br/>budget-companions-web<br/>React SPA")]
 
     subgraph VPC["VPC budget-vpc (europe-central2)"]
-        subgraph WEB["Public Subnet 10.0.1.0/24"]
-            N["budget-web-1<br/>Nginx + React<br/>/ → pliki SPA<br/>/api/ → proxy"]
-        end
         subgraph API["Private Subnet A 10.0.2.0/24"]
-            S["budget-api-1<br/>Spring Boot :8080<br/>Controller → Service → Repository"]
+            S["Cloud Run budget-api<br/>Spring Boot<br/>Controller → Service → Repository"]
         end
         subgraph DB["Private Subnet B 10.0.3.0/24"]
             P[("budget-db-1<br/>PostgreSQL 16 :5432")]
@@ -58,13 +57,11 @@ flowchart LR
 
     SM[[Secret Manager<br/>budget-db-password]]
 
-    U -- "HTTP GET/POST/PUT/DELETE /api/..." --> N
-    N -- "proxy_pass http://10.0.2.10:8080" --> S
-    S -- "JDBC / SQL" --> P
+    U -- "HTTPS /" --> LB
+    LB -- "/ , /assets/*" --> B
+    LB -- "/api/*" --> S
+    S -- "JDBC 10.0.3.10:5432" --> P
     SM -. "hasło bazy przy starcie" .-> S
-    P -- "wiersze" --> S
-    S -- "JSON (DTO)" --> N
-    N -- "JSON → odświeżenie widoku" --> U
 ```
 
 ### Sekwencja zapisu (formularz → baza → widok)
@@ -73,8 +70,8 @@ flowchart LR
 sequenceDiagram
     actor U as Użytkownik
     participant UI as React (przeglądarka)
-    participant NG as Nginx (Web)
-    participant API as Spring Boot (API)
+    participant LB as HTTPS Load Balancer
+    participant API as Cloud Run (Spring Boot)
     participant DB as PostgreSQL (DB)
 
     U->>UI: wypełnia formularz i klika „Dodaj”
@@ -82,28 +79,67 @@ sequenceDiagram
     alt błędy walidacji
         UI-->>U: komunikaty przy polach, brak zapytania
     else dane poprawne
-        UI->>NG: POST /api/transactions (JSON)
-        NG->>API: POST /api/transactions
+        UI->>LB: POST https://<domena>/api/transactions (JSON)
+        LB->>API: POST /api/transactions
         API->>API: Bean Validation + reguły biznesowe
         API->>DB: INSERT INTO transactions
         DB-->>API: nowy wiersz (id)
-        API-->>NG: 201 Created + JSON
-        NG-->>UI: 201 Created
-        UI->>NG: GET /api/transactions
-        NG->>API: GET /api/transactions
+        API-->>UI: 201 Created + JSON
+        UI->>LB: GET /api/transactions
+        LB->>API: GET /api/transactions
         API->>DB: SELECT
         API-->>UI: 200 OK + lista
         UI-->>U: toast „Transakcja została dodana”, odświeżona lista
     end
 ```
 
-Przeglądarka nigdy nie łączy się bezpośrednio z API: wszystkie zapytania idą na ten sam adres co strona (`/api/...`), a Nginx na `budget-web-1` przekazuje je do prywatnego adresu API. Dzięki temu API nie potrzebuje publicznego IP ani CORS w chmurze.
+Przeglądarka łączy się wyłącznie z Load Balancerem: strona i API są pod tym samym adresem (`/api/...`), więc w chmurze nie jest potrzebny CORS, a adres `*.run.app` usługi Cloud Run nie przyjmuje ruchu z Internetu.
+
+---
+
+## 🔒 Bezpieczeństwo i reguły zaporowe
+
+Zasada najmniejszych uprawnień: żaden zasób nie ma szerszego dostępu do sieci, niż wynika to z jego roli. Reguły firewall VPC są zdefiniowane w Terraform (`terraform/main.tf`), Load Balancer i ustawienia Cloud Run w `deploy/setup-https-gcp.sh` i `.github/workflows/deploy.yml`.
+
+### Inbound (ruch przychodzący)
+
+| Warstwa | Reguła / mechanizm | Protokół i port | Źródło | Cel | Akcja |
+|---|---|---|---|---|---|
+| Web | `budget-https-rule` (Load Balancer) | TCP 443 (TLS 1.2+, polityka `budget-ssl-policy` MODERN) | 0.0.0.0/0 | `budget-https-proxy` → bucket / Cloud Run | allow |
+| Web | `budget-http-rule` + `budget-http-redirect` | TCP 80 | 0.0.0.0/0 | odpowiedź 301 na `https://` | redirect |
+| API | ingress Cloud Run `internal-and-cloud-load-balancing` | HTTPS `/api/*`, `/actuator/health`, `/actuator/info` | tylko Load Balancer | `budget-api` | allow |
+| API | ingress Cloud Run | dowolny | Internet bezpośrednio na `*.run.app` | `budget-api` | deny (404) |
+| Web | `budget-vpc-allow-web-http-https` | TCP 80, 443 | tylko Load Balancer Google 130.211.0.0/22, 35.191.0.0/16 | tag `web` (VM w podsieci publicznej) | allow |
+| API | `budget-vpc-allow-api-from-web` | TCP 8080 | 10.0.1.0/24 (podsieć Web) | tag `api` (VM w podsieci API) | allow |
+| DB | `budget-vpc-allow-db-from-api` | TCP 5432 | 10.0.2.0/24 (podsieć API) | tag `db` | allow |
+| Wszystkie | `budget-vpc-allow-ssh-iap` | TCP 22 | 35.235.240.0/20 (tylko Identity-Aware Proxy, wymaga konta Google z rolą IAP) | VM | allow |
+| Wszystkie | `budget-vpc-deny-all-ingress` (priorytet 65000, logowanie) | wszystkie | 0.0.0.0/0 | VM | deny |
+
+Brak reguł wpuszczających 0.0.0.0/0 na porty 22 (SSH), 3389 (RDP), 5432 (PostgreSQL), 3306, 27017 i 8080. Maszyna bazy nie ma publicznego adresu IP.
+
+### Outbound (ruch wychodzący)
+
+| Warstwa | Mechanizm | Cel | Port | Akcja |
+|---|---|---|---|---|
+| Web | Load Balancer → backendy | bucket `budget-companions-web`, serverless NEG `budget-api-neg` | – | allow (wewnętrzna sieć Google) |
+| API | Direct VPC egress `private-ranges-only` | adresy prywatne VPC (baza 10.0.3.10) | 5432 | allow |
+| API | Cloud Run (poza VPC) | Secret Manager, Google APIs | 443 | allow |
+| DB | Cloud NAT `budget-vpc-nat` (bez publicznego IP) | Internet: aktualizacje i obraz Docker | 80/443 | allow, tylko połączenia inicjowane z VM |
+| DB | Private Google Access | Secret Manager | 443 | allow |
+| Wszystkie | domyślna reguła VPC (implied) | odpowiedzi na dozwolone połączenia (firewall stanowy) | – | allow |
+
+### Pozostałe zabezpieczenia
+
+- HTTPS z certyfikatem Google-managed (`budget-cert`), automatyczne odnawianie, minimalna wersja TLS 1.2.
+- Hasło bazy w Secret Manager, dostęp ma tylko konto `budget-api-run`.
+- GitHub Actions loguje się do GCP przez OIDC (Workload Identity Federation), bez kluczy JSON; konto `github-deployer` ma tylko potrzebne role.
+- CI: Gitleaks, Trivy, CodeQL i Dependabot (Blok 07).
 
 ---
 
 ## 🔌 API – podsumowanie endpointów
 
-Bazowy adres: lokalnie `http://localhost:8080/api`, w chmurze `http://<IP budget-web-1>/api`. Format danych: JSON, daty `RRRR-MM-DD`, kwoty jako liczby z maks. 2 miejscami po przecinku.
+Bazowy adres: lokalnie `http://localhost:8080/api`, w chmurze `https://<APP_DOMAIN>/api`. Format danych: JSON, daty `RRRR-MM-DD`, kwoty jako liczby z maks. 2 miejscami po przecinku.
 
 ### Transakcje
 
@@ -258,17 +294,19 @@ Aplikacja: http://localhost:5173. Plik `.env.local` zawiera `VITE_API_BASE_URL=h
 
 ---
 
-## ☁ Wdrożenie w GCP (Cloud Shell)
+## ☁ Wdrożenie w GCP
+
+Jednorazowo w Cloud Shell (jako właściciel projektu):
 
 ```bash
-cd backend
-bash deploy/deploy-db.sh
-bash deploy/deploy-api.sh
-cd ../frontend
-bash deploy/deploy-gcp.sh
+cd backend && bash deploy/deploy-db.sh && cd ..
+bash deploy/setup-cd-gcp.sh
+bash deploy/setup-https-gcp.sh
 ```
 
-`deploy-gcp.sh` buduje obraz Nginx z frontendem (`VITE_API_BASE_URL=/api`) i uruchamia go na `budget-web-1` ze zmienną `API_UPSTREAM=http://10.0.2.10:8080`. Aplikacja jest dostępna pod publicznym IP `budget-web-1`.
+`setup-cd-gcp.sh` tworzy konta usługowe, OIDC dla GitHub Actions, Artifact Registry i bucket. `setup-https-gcp.sh` usuwa reguły zapory otwierające porty zarządcze i bazodanowe dla 0.0.0.0/0, tworzy HTTPS Load Balancer z certyfikatem Google, przekierowanie HTTP → HTTPS i ogranicza ruch do Cloud Run tylko do Load Balancera. Na końcu wypisuje domenę do zmiennej `APP_DOMAIN` w GitHub.
+
+Kolejne wdrożenia robi workflow `CD Deploy to GCP` po każdym merge do `main`: CI → Cloud Run → Cloud Storage → healthcheck (HTTPS, wersja, przekierowanie, blokada bezpośredniego dostępu do Cloud Run).
 
 ---
 
@@ -276,9 +314,10 @@ bash deploy/deploy-gcp.sh
 
 ```
 budget-application/
-├── .github/workflows/ci.yml   # CI: lint, testy i build frontendu oraz backendu
+├── .github/workflows/         # ci.yml (CI + skanery), deploy.yml (CD do GCP), codeql.yml
 ├── backend/                   # API – Java 21, Spring Boot (opis w backend/README.md)
 ├── config/                    # Szablony konfiguracji środowisk
+├── deploy/                    # Skrypty GCP: OIDC/CD i HTTPS Load Balancer
 ├── docs/                      # Dokumentacja i sprawozdania z bloków
 ├── frontend/                  # Interfejs użytkownika – React (opis w frontend/README.md)
 ├── terraform/                 # Sieć VPC, podsieci i firewall w GCP
@@ -289,7 +328,7 @@ budget-application/
 
 ## ⚙ Konfiguracja
 
-- Adresy usług (URL API, adres bazy danych) **nie są wpisane na sztywno w kodzie**, aplikacja odczytuje je ze zmiennych środowiskowych (`VITE_API_BASE_URL`, `API_UPSTREAM`, `DB_HOST`, `DB_*`, `CORS_ALLOWED_ORIGINS`).
+- Adresy usług (URL API, adres bazy danych) **nie są wpisane na sztywno w kodzie**, aplikacja odczytuje je ze zmiennych środowiskowych (`VITE_API_BASE_URL`, `DB_HOST`, `DB_*`, `CORS_ALLOWED_ORIGINS`), a domena aplikacji w GitHub Actions ze zmiennej `APP_DOMAIN`.
 - Pliki z prawdziwymi wartościami (`.env`, `.env.local`) nie trafiają do repozytorium. W GCP hasło do bazy jest w Secret Manager.
 
 ---
@@ -298,4 +337,5 @@ budget-application/
 
 - Praca na gałęziach `feature/<nazwa>`, bez bezpośrednich commitów do `main`.
 - Każda zmiana trafia do `main` przez Pull Request podpięty pod Issue z tablicy projektu.
-- Workflow `CI` (GitHub Actions) uruchamia się dla każdego PR i pusha do `main`: frontend (`npm ci`, `lint`, `test`, `build`) oraz backend (`mvn verify`). Zielony status jest warunkiem merge i punktem wyjścia do automatycznego wdrożenia.
+- Workflow `CI` (GitHub Actions) uruchamia się dla każdego PR: Gitleaks, Trivy, frontend (`npm ci`, `lint`, `test`, `build`) oraz backend (`mvn verify`). Zielony status jest warunkiem merge.
+- Po merge do `main` workflow `CD Deploy to GCP` ponownie uruchamia CI i dopiero po jego sukcesie wdraża aplikację.
